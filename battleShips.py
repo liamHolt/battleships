@@ -118,18 +118,34 @@ class GameBoard:
                 for i in range (0, length):
                     print(" i: ", i )
                     if direction == 1:
-                        if x > 0 and x < 9 and (self.members[player].binCanvas[x+1][y+i+1] == 2 or self.members[player].binCanvas[x-1][y+i+1] == 2):
+                        if x > 0 and x < 9 and (self.members[player].binCanvas[x+1][y+i] == 2 or self.members[player].binCanvas[x-1][y+i] == 2):
                             crossing = True
-                        if y > 0 and y < 9 and (self.members[player].binCanvas[x][y-1] == 2 or self.members[player].binCanvas[x][y+1] == 2):
-                            	crossing = True
+                        if y > 0 and y < 9 and (self.members[player].binCanvas[x][y+i+1] == 2 or self.members[player].binCanvas[x][y-1] == 2):
+                            crossing = True
                         if self.members[player].binCanvas[x][y+i] == 2:
                             crossing = True
-                    else:
-                        if y > 0 and y < 9 and (self.members[player].binCanvas[x+i+1][y+1] == 2 or self.members[player].binCanvas[x+i+1][y-1] == 2):
+                        if x == 0 and (self.members[player].binCanvas[x+1][y+i] == 2):
                             crossing = True
-                        if x > 0 and x < 9 and (self.members[player].binCanvas[x-1][y] == 2 or self.members[player].binCanvas[x+1][y] == 2):
-                            	crossing = True
+                        if x == 9 and (self.members[player].binCanvas[x-1][y+i] == 2):
+                            crossing = True
+                        if y == 0 and (self.members[player].binCanvas[x][y+1+i] == 2):
+                            crossing = True
+                        if y == 9 and (self.members[player].binCanvas[x][y-1] == 2):
+                            crossing = True
+                    else:
+                        if y > 0 and y < 9 and (self.members[player].binCanvas[x+i][y+1] == 2 or self.members[player].binCanvas[x+i][y-1] == 2):
+                            crossing = True
+                        if x > 0 and x < 9 and (self.members[player].binCanvas[x+i+1][y] == 2 or self.members[player].binCanvas[x-1][y] == 2):
+                            crossing = True
                         if self.members[player].binCanvas[x+i][y] == 2:
+                            crossing = True
+                        if y == 0 and (self.members[player].binCanvas[x+i][y+1] == 2):
+                            crossing = True
+                        if y == 9 and (self.members[player].binCanvas[x+i][y-1] == 2):
+                            crossing = True
+                        if x == 0 and (self.members[player].binCanvas[x+i+1][y] == 2):
+                            crossing = True
+                        if x == 9 and (self.members[player].binCanvas[x-1][y] == 2):
                             crossing = True
                 if crossing: 
                     continue
