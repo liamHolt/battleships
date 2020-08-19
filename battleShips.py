@@ -93,20 +93,25 @@ class GameBoard:
                     self.members[player].canvas.create_rectangle(x*squeareWidth,y*squareHeigth,(x*squeareWidth) +  squeareWidth ,(y*squareHeigth) + squareHeigth, fill="red")
     
     def shoot(self, x, y, player):
+        hit = False
         print("Player: ",  type(self.members[player]), " X: ", x, " Y: ", y)
         if self.members[player].binCanvas[x][y] == 1 or self.members[player].binCanvas[x][y] == 3:
-            return
+            return hit
         if self.members[player].binCanvas[x][y] == 0:
             self.members[player].binCanvas[x][y] = 1
         if self.members[player].binCanvas[x][y] == 2:
             self.members[player].binCanvas[x][y] = 3
+            hit = True
         
 
         self.showFields(player)
-        if self.turn == 1:
-            self.turn = 0
+        if not hit:
+            if self.turn == 1:
+                self.turn = 0
+            else:
+                self.turn = 1
         else:
-            self.turn = 1
+            return False
 
     def setFieldsRandom(self, length, player):
         while True:
@@ -157,16 +162,9 @@ class GameBoard:
                 break
 
     def choose(self, player):
-        self.setFieldsRandom(5,player)
-        self.setFieldsRandom(4,player)
-        self.setFieldsRandom(4,player)
-        self.setFieldsRandom(3,player)
-        self.setFieldsRandom(3,player)
-        self.setFieldsRandom(3,player)
-        self.setFieldsRandom(2,player)
-        self.setFieldsRandom(2,player)
-        self.setFieldsRandom(2,player)
-        self.setFieldsRandom(2,player)
+        for i in range(5, 1, -1):
+            for x in range(0,6-i):
+                self.setFieldsRandom(i,player)
 
     def play(self):
         self.choose(0)
