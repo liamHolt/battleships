@@ -93,25 +93,27 @@ class GameBoard:
                     self.members[player].canvas.create_rectangle(x*squeareWidth,y*squareHeigth,(x*squeareWidth) +  squeareWidth ,(y*squareHeigth) + squareHeigth, fill="red")
     
     def shoot(self, x, y, player):
-        hit = False
+        hit = 0
         print("Player: ",  type(self.members[player]), " X: ", x, " Y: ", y)
         if self.members[player].binCanvas[x][y] == 1 or self.members[player].binCanvas[x][y] == 3:
+            hit = 1
             return hit
         if self.members[player].binCanvas[x][y] == 0:
             self.members[player].binCanvas[x][y] = 1
+            hit = 2
         if self.members[player].binCanvas[x][y] == 2:
             self.members[player].binCanvas[x][y] = 3
-            hit = True
-        
+            hit = 3
 
         self.showFields(player)
-        if not hit:
+        if hit == 2:
             if self.turn == 1:
                 self.turn = 0
             else:
                 self.turn = 1
+            return hit
         else:
-            return False
+            return hit
 
     def setFieldsRandom(self, length, player):
         while True:
@@ -171,16 +173,39 @@ class GameBoard:
         self.choose(1)
         self.showFields(0)
         self.showFields(1)
+        hit = 1
+        hitX = 0
+        hitY = 0
+        fulfill = False
         while not self.gameOver:
             if self.turn == 0:
                 self.members[0].canvas.bind('<Button-1>', self.realPlayerShoot)
                 root.update()
             else:
+                # An anna: HIer wird der Bot programmiert.
                 self.members[0].canvas.unbind('<Button-1>')
-                x = random.randint(0,9)
-                y = random.randint(0,9)
-                print("x: ", x, "y: ", y)
-                self.shoot(x, y, 1)
+                if not fulfill:
+                    if hit == 1 or hit == 2:
+                        x = random.randint(0,9)
+                        y = random.randint(0,9)
+                        print("x: ", x, "y: ", y)
+                        hit = self.shoot(x, y, 1)
+                        hitX = x
+                        hitY = y
+                    if hit == 3:
+                        tempHit = self.shoot(hitX -1, hitY, 1)
+                        if tempHit == 1:
+                            tempHit = self.shoot(hitX +1, hitY, 1)
+                            if tempHit == 1:
+                                tempHit = self.shoot(hitX, hitY + 1, 1)
+                                if tempHit == 1:
+                                    tempHit = self.shoot(hitX, hitY - 1, 1)
+                        if tempHit == 3:
+                            hit = 1
+                            fulfill = True
+                else:
+                    ## Hier muss weiter geschrieben werden.           
+
                 root.update()
 
     def realPlayerShoot(self, event):
