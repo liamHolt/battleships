@@ -93,6 +93,8 @@ class GameBoard:
                     self.members[player].canvas.create_rectangle(x*squeareWidth,y*squareHeigth,(x*squeareWidth) +  squeareWidth ,(y*squareHeigth) + squareHeigth, fill="red")
     
     def shoot(self, x, y, player):
+        if x < 0 or y < 0 or x > 9 or y > 9:
+            return 1
         hit = 0
         print("Player: ",  type(self.members[player]), " X: ", x, " Y: ", y)
         if self.members[player].binCanvas[x][y] == 1 or self.members[player].binCanvas[x][y] == 3:
@@ -168,6 +170,8 @@ class GameBoard:
             for x in range(0,6-i):
                 self.setFieldsRandom(i,player)
 
+
+
     def play(self):
         self.choose(0)
         self.choose(1)
@@ -176,35 +180,107 @@ class GameBoard:
         hit = 1
         hitX = 0
         hitY = 0
-        fulfill = False
+        direction = 0
+        changeDirection = 0
         while not self.gameOver:
             if self.turn == 0:
                 self.members[0].canvas.bind('<Button-1>', self.realPlayerShoot)
                 root.update()
             else:
-                # An anna: HIer wird der Bot programmiert.
                 self.members[0].canvas.unbind('<Button-1>')
-                if not fulfill:
+                if direction == 0:
                     if hit == 1 or hit == 2:
-                        x = random.randint(0,9)
-                        y = random.randint(0,9)
-                        print("x: ", x, "y: ", y)
+                        modCheck = 0
+                        while True:
+                            x = random.randrange(0,9)
+                            y = random.randrange(0,9)
+
+                            if y != 0 and x > y and x % y == 0:
+                                continue
+                            if x != 0 and y > x and y % x == 1:
+                                continue
+                            if not self.members[1].binCanvas[x][y] == 1 or self.members[1].binCanvas[x][y] == 3:
+                                break
+                            print("MOIN")
+                        print("x: ", x, "y: ", y, "Random")
                         hit = self.shoot(x, y, 1)
                         hitX = x
                         hitY = y
                     if hit == 3:
-                        tempHit = self.shoot(hitX -1, hitY, 1)
-                        if tempHit == 1:
-                            tempHit = self.shoot(hitX +1, hitY, 1)
-                            if tempHit == 1:
-                                tempHit = self.shoot(hitX, hitY + 1, 1)
-                                if tempHit == 1:
-                                    tempHit = self.shoot(hitX, hitY - 1, 1)
-                        if tempHit == 3:
-                            hit = 1
-                            fulfill = True
-                else:
-                    ## Hier muss weiter geschrieben werden.           
+                        while True:
+                            trigger = self.shoot(hitX -1, hitY, 1)
+                            if trigger == 2: 
+                                break
+                            elif trigger == 3:
+                                direction = 1
+                                hit = 1
+                                break
+                            trigger = self.shoot(hitX + 1, hitY, 1)
+                            if trigger == 2: 
+                                break
+                            elif trigger == 3:
+                                direction = 2
+                                hit = 1
+                                break
+                            trigger = self.shoot(hitX, hitY -1, 1)
+                            if trigger == 2: 
+                                break
+                            elif trigger == 3:
+                                direction = 3
+                                hit = 1
+                                break
+                            trigger = self.shoot(hitX, hitY +1, 1)
+                            if trigger == 2: 
+                                break
+                            elif trigger == 3:
+                                direction = 4
+                                hit = 1
+                                break
+                elif changeDirection < 2:
+                    counter = 0
+                    if changeDirection == 0:
+                        counter = 2
+                    else:
+                        counter = 1
+                    while True and counter < 5:
+                        if direction == 1:
+                            trigger = self.shoot(hitX - counter, hitY, 1)
+                            if trigger == 2 or trigger == 1:
+                                direction = 2
+                                changeDirection = changeDirection + 1
+                                break
+                            else:
+                                counter = counter + 1
+                        if direction == 2:
+                            trigger = self.shoot(hitX + counter, hitY, 1)
+                            if trigger == 2 or trigger == 1:
+                                direction = 1
+                                changeDirection = changeDirection + 1
+                                break
+                            else:
+                                counter = counter + 1
+                        if direction == 3:
+                            trigger = self.shoot(hitX, hitY  - counter, 1)
+                            if trigger == 2 or trigger == 1:
+                                direction = 4
+                                changeDirection = changeDirection + 1
+                                break
+                            else:
+                                counter = counter + 1
+                        if direction == 4:
+                            trigger = self.shoot(hitX, hitY + counter, 1)
+                            if trigger == 2 or trigger == 1:
+                                direction = 3
+                                changeDirection = changeDirection + 1
+                                break
+                            else:
+                                counter = counter + 1
+                if direction > 0 and changeDirection > 1:
+                    hit = 1
+                    changeDirection = 0
+                    direction = 0
+                        
+                        
 
                 root.update()
 
