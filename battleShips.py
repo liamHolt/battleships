@@ -16,6 +16,8 @@ root = tk.Tk(className="Battleships")
 btn1_text = tk.StringVar()
 btn2_text = tk.StringVar()
 btn3_text = tk.StringVar()
+btn4_text = tk.StringVar()
+
 
 
 class Player(object):
@@ -63,7 +65,10 @@ class Computer(Player):
         return
 
 class GameBoard:
+    fireMode = 0
+    fleet = 0
     level = 0
+    shootsLeft = 6
     gameState = 0
     computerPlayer = Computer()
     realPlayer = RealPlayer()
@@ -111,7 +116,20 @@ class GameBoard:
                 if self.members[player].binCanvas[x][y] == 3:
                     self.members[player].canvas.create_rectangle(x*squeareWidth,y*squareHeigth,(x*squeareWidth) +  squeareWidth ,(y*squareHeigth) + squareHeigth, fill="red")
     
+    def winChecker(self):
+        if self.members[0].shipsLeft == 0 :
+            btn1_text.set("You Win - Play Again")
+            return True
+        elif self.members[1].shipsLeft == 0:
+            btn1_text.set("Game Over - Play Again")
+            return True
+        else:
+            btn1_text.set("Give Up")
+            return False
+
     def shoot(self, x, y, player):
+        if self.fireMode == 1 and self.shootsLeft == 0:
+            return
         if self.gameState == 3:
             return
         self.gameState = 1
@@ -128,14 +146,17 @@ class GameBoard:
             self.members[player].binCanvas[x][y] = 3
             self.counter[player] = self.counter[player] + 1
             hit = 3
-        if self.counter[0] == 30:
-            btn1_text.set("You Win - Play Again")
-        elif self.counter[1] == 30:
-            btn1_text.set("Game Over - Play Again")
-        else:
-            btn1_text.set("Give Up")
         
         self.showFields(player)
+        if self.fireMode == 1:
+            self.shootsLeft = self.shootsLeft - 1
+            if self.shootsLeft == 0:
+                if self.turn == 1:
+                    self.turn = 0
+                else:
+                    self.turn = 1
+            return hit
+        
         if hit == 2:
             if self.turn == 1:
                 self.turn = 0
@@ -201,9 +222,14 @@ class GameBoard:
         self.members[player].binCanvas = [0] * squareNumber
         for i in range(squareNumber):
             self.members[player].binCanvas[i] = [0] * squareNumber
-        for i in range(5, 1, -1):
-            for x in range(0,6-i):
-                self.setFields(i,player)
+        if self.fleet == 0:
+            for i in range(5, 1, -1):
+                for x in range(0,6-i):
+                    self.setFields(i,player)
+        else:
+            for i in range(4, 1, -1):
+                for x in range(0,5-i):
+                    self.setFields(i,player)
 
 
     def play(self):
@@ -217,8 +243,16 @@ class GameBoard:
         hitY = 0
         direction = 0
         changeDirection = 0
+        tempTurn = 1
         while not self.gameOver:
+            if self.gameState != 0 and self.winChecker():
+                self.shootsLeft = 6
+                self.gameState = 0
+                self.turn = 0
             if self.turn == 0:
+                if tempTurn != self.turn:
+                    tempTurn = self.turn
+                    self.shootsLeft = self.members[1].shipsLeft
                 if self.gameState == 0 or self.gameState == 3:
                     self.members[1].canvas.bind('<Button-1>', self.pick)
                 else:
@@ -228,14 +262,28 @@ class GameBoard:
                 root.update()
             else:
                 self.members[0].canvas.unbind('<Button-1>')
+                if tempTurn != self.turn:
+                    tempTurn = self.turn
+                    self.shootsLeft = self.members[0].shipsLeft
+
+                if self.fireMode == 1 and self.level == 1 and len(self.members[1].pickedOnesX)>0:
+                    shipsLeft = True
+                    for i in range(len(self.members[1].pickedOnesX)):
+                        if self.members[1].binCanvas[self.members[1].pickedOnesX[i]][self.members[1].pickedOnesY[i]] != 3:
+                            self.shoot(self.members[1].pickedOnesX[i], self.members[1].pickedOnesY[i], 1)
+                    if not shipsLeft:
+                        self.members[1].pickedOnesX.clear()
+                        self.members[1].pickedOnesY.clear()
                 if direction == 0:
                     if hit == 1 or hit == 2:
                         pressure = 0
                         while True:
                             pressure = pressure + 1
+                            if pressure > 120:
+                                break
                             x = random.randrange(0,squareNumber)
                             y = random.randrange(0,squareNumber)
-                            if pressure < 10:
+                            if pressure < 60:
                                 if (x % 2 == 1 and y % 2 == 0):
                                     continue
                                 if x + 1 <= 9 and (self.members[1].binCanvas[x+1][y] == 1): 
@@ -265,11 +313,8 @@ class GameBoard:
                             self.shipFinder(1, x, y)
                             for i in range(len(self.members[1].pickedOnesX)):
                                 self.shoot(self.members[1].pickedOnesX[i], self.members[1].pickedOnesY[i], 1)
-                                print("X: ", self.members[1].pickedOnesX[i], "Y: ", self.members[1].pickedOnesY[i])
-                            self.members[1].pickedOnesX.clear()
-                            self.members[1].pickedOnesY.clear()
-                            hit = 1
                             self.members[1].shipsLeft = self.members[1].shipsLeft - 1
+                            hit = 1
                     if hit == 3:
                         while True:
                             trigger = self.shoot(hitX -1, hitY, 1)
@@ -349,12 +394,26 @@ class GameBoard:
     def realPlayerShoot(self, event):
         x = int(event.x/squeareWidth)
         y = int(event.y/squareHeigth)
-        self.shoot(x, y, 0)
+        hit = self.shoot(x, y, 0)
+        if hit == 3:#HIER WEITERMACHEN
+            self.shipFinder(0, x, y)
+            print(self.members[0].pickedOnesX)
+            print(self.members[0].pickedOnesY)
+            shipsLeft = False
+            for i in range(len(self.members[0].pickedOnesX)):
+                if self.members[0].binCanvas[self.members[0].pickedOnesX[i]][self.members[0].pickedOnesY[i]] != 3:
+                    shipsLeft = True
+            if not shipsLeft:
+                self.members[0].shipsLeft = self.members[0].shipsLeft - 1 
+            
+            
 
     def shipFinder(self, player, x, y):
+        self.members[player].pickedOnesX.clear()
+        self.members[player].pickedOnesY.clear()
         count = 1
         while True: 
-            if (x+count < squareNumber) and self.members[1].binCanvas[x+count][y] == 2:
+            if (x+count < squareNumber) and (self.members[player].binCanvas[x+count][y] == 2 or self.members[player].binCanvas[x+count][y] == 3):
                 self.members[player].pickedOnesX.append(x+count)
                 self.members[player].pickedOnesY.append(y)
                 count = count +1
@@ -362,7 +421,7 @@ class GameBoard:
                 count = 1
                 break
         while True: 
-            if (x - count >= 0) and self.members[1].binCanvas[x-count][y] == 2:
+            if (x - count >= 0) and (self.members[player].binCanvas[x-count][y] == 2 or self.members[player].binCanvas[x-count][y] == 3):
                 self.members[player].pickedOnesX.append(x-count)
                 self.members[player].pickedOnesY.append(y)
                 count = count +1
@@ -370,7 +429,7 @@ class GameBoard:
                 count = 1
                 break
         while True: 
-            if (y - count >= 0) and self.members[1].binCanvas[x][y - count] == 2:
+            if (y - count >= 0) and (self.members[player].binCanvas[x][y - count] == 2 or self.members[player].binCanvas[x][y - count] == 3):
                 self.members[player].pickedOnesX.append(x)
                 self.members[player].pickedOnesY.append(y- count)
                 count = count +1
@@ -378,7 +437,7 @@ class GameBoard:
                 count = 1
                 break
         while True: 
-            if (y+count < squareNumber) and self.members[1].binCanvas[x][y+count] == 2:
+            if (y+count < squareNumber) and (self.members[player].binCanvas[x][y+count] == 2 or self.members[player].binCanvas[x][y+count] == 3):
                 self.members[player].pickedOnesX.append(x)
                 self.members[player].pickedOnesY.append(y+count)
                 count = count +1
@@ -480,27 +539,70 @@ def startStoper():
         gameBoard.choose(1)
         gameBoard.showFields(0)
         gameBoard.showFields(1)
+        gameBoard.turn = 0
+        if gameBoard.fireMode == 0:
+            gameBoard.members[0].shipsLeft = 10
+            gameBoard.members[1].shipsLeft = 10
+        else:
+            gameBoard.members[0].shipsLeft = 6
+            gameBoard.members[1].shipsLeft = 6
+            gameBoard.tempTurn = 1
+            gameBoard.shootsLeft = 6
+            gameBoard.turn = 0
         gameBoard.play()
         gameBoard.pickedLength = 30
-        gameBoard.members[0].shipsLeft = 10
-        gameBoard.members[0].shipsLeft = 10
+def fleetChanger():
+    if gameBoard.gameState == 0:
+        if gameBoard.fleet == 0:
+            gameBoard.fleet = 1
+            gameBoard.members[0].shipsLeft = 6
+            gameBoard.members[1].shipsLeft = 6
+            btn4_text.set("Small Fleet")
+        else:
+            if gameBoard.fireMode == 1:
+                gameBoard.fireMode = 0
+                btn3_text.set("Classic Fire-Mode")
+            gameBoard.fleet = 0
+            gameBoard.members[0].shipsLeft = 10
+            gameBoard.members[1].shipsLeft = 10
+            btn4_text.set("Big Fleet (Classic)")
+        startStoper()
 
+def fireMode():
+    print(gameBoard.fireMode, " GAMESTATE")
+    if gameBoard.gameState == 0:
+        if gameBoard.fireMode == 1:
+            btn3_text.set("Classic Fire-Mode")
+            gameBoard.fireMode = 0
+        else:
+            btn3_text.set("Chain Fire-Mode") 
+            gameBoard.fireMode = 1
+            if gameBoard.fleet == 0:
+                gameBoard.fleet = 1
+                gameBoard.members[0].shipsLeft = 6
+                gameBoard.members[1].shipsLeft = 6
+                btn4_text.set("Small Fleet")
+                startStoper()
+        
 def level():
     if gameBoard.level == 0:
         gameBoard.level = 1
-        btn2_text.set("Set Bot to Easy")
+        btn2_text.set("Rage-Mode")
     else:
         gameBoard.level = 0
-        btn2_text.set("Set Bot to Rage-Mode")
+        btn2_text.set("Easy")
 
 
 tk.Button(root, text="Start", command=startStoper, textvariable=btn1_text).grid(row = 5)
 tk.Button(root, text="Rule", command=level, textvariable=btn2_text).grid(row = 6)
-tk.Button(root, text="Chain Fire", command=level, textvariable=btn3_text).grid(row = 7)
+tk.Button(root, text="Classic Fire-Mode", command=fireMode, textvariable=btn3_text).grid(row = 7)
+tk.Button(root, text="Big Fleet (Classic)", command=fleetChanger, textvariable=btn4_text).grid(row = 8)
+
 
 btn1_text.set("Randomize")
-btn2_text.set("Set Bot to Rage-Mode")
-btn3_text.set("Chain Fire-Mode")
+btn2_text.set("Easy")
+btn3_text.set("Classic Fire-Mode")
+btn4_text.set("Big Fleet (Classic)")
 
 
 gameBoard.play()
